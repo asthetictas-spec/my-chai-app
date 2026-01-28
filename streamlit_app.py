@@ -3,10 +3,8 @@ import requests
 import json
 import os
 
-# ১. পেজ সেটিংস এবং ডিজাইন
 st.set_page_config(page_title="My Private Chai", layout="centered")
 
-# ২. চ্যাট হিস্ট্রি ফাইল সেটআপ (Old Chat সেভ করার জন্য)
 CHAT_FILE = "chat_history_save.json"
 
 def load_history():
@@ -19,7 +17,6 @@ def save_history(messages):
     with open(CHAT_FILE, "w") as f:
         json.dump(messages, f)
 
-# ৩. ক্যারেক্টার এবং তাদের ছবির লিঙ্ক
 CHARACTERS = {
     "Vampire Prince": {
         "prompt": "You are Alaric, a centuries-old vampire prince. You are possessive, elegant, and deeply romantic.",
@@ -27,11 +24,9 @@ CHARACTERS = {
     }
 }
 
-# ৪. সেশন স্টেট এবং হিস্ট্রি লোড
 if "messages" not in st.session_state:
     st.session_state.messages = load_history()
 
-# ৫. সাইডবার সেটিংস
 st.sidebar.title("Chai Settings")
 if st.sidebar.button("Clear Chat / New Story"):
     st.session_state.messages = []
@@ -39,22 +34,16 @@ if st.sidebar.button("Clear Chat / New Story"):
         os.remove(CHAT_FILE)
     st.rerun()
 
-# ৬. আগের চ্যাট স্ক্রিনে দেখানো
 for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=message.get("avatar")):
         st.markdown(message["content"])
 
-# ৭. নতুন মেসেজ ইনপুট এবং এআই রেসপন্স
 if prompt := st.chat_input("Type your message..."):
-    # আপনার ছবি
     user_pic = "https://i.pinimg.com/736x/5c/8a/7e/5c8a7e937d7a4f938f38f38f38f38f38.jpg"
-    
-    # ইউজারের মেসেজ সেভ এবং শো করা
     st.session_state.messages.append({"role": "user", "content": prompt, "avatar": user_pic})
     with st.chat_message("user", avatar=user_pic):
         st.markdown(prompt)
 
-    # অ্যালারিকের উত্তর আনা
     with st.chat_message("assistant", avatar=CHARACTERS["Vampire Prince"]["avatar"]):
         try:
             response = requests.post(
@@ -68,8 +57,6 @@ if prompt := st.chat_input("Type your message..."):
             )
             bot_msg = response.json()['choices'][0]['message']['content']
             st.markdown(bot_msg)
-            
-            # মেমোরিতে সেভ করা
             st.session_state.messages.append({"role": "assistant", "content": bot_msg, "avatar": CHARACTERS["Vampire Prince"]["avatar"]})
             save_history(st.session_state.messages)
         except:
