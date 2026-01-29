@@ -43,14 +43,24 @@ if prompt := st.chat_input("Write something..."):
     try:
         with st.chat_message("assistant", avatar="✨"):
             response = client.chat.completions.create(
-                model="google/gemini-2.0-flash-lite-preview-02-05:free",
+                model="google/gemini-2.0-flash-exp:free",
                 messages=st.session_state.messages
             )
             full_response = response.choices[0].message.content
             st.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
-    except Exception as e:
-        st.warning("The character is sleeping. Try again in 30 seconds.")
+    except:
+        try:
+            with st.chat_message("assistant", avatar="✨"):
+                response = client.chat.completions.create(
+                    model="mistralai/mistral-7b-instruct:free",
+                    messages=st.session_state.messages
+                )
+                full_response = response.choices[0].message.content
+                st.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except:
+            st.error("The character is sleeping. Try again in 30 seconds.")
 
 if st.sidebar.button("🗑️ Start New Chat"):
     st.session_state.messages = [{"role": "system", "content": characters[selected_char]}]
