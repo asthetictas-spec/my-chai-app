@@ -11,7 +11,6 @@ else:
 
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
 
-# Character List with Emojis
 characters = {
     "🧛‍♂️ Vampire Prince": "You are Prince Alaric, a mysterious and possessive vampire prince. You call the user 'Little love'.",
     "💼 Cold Husband": "You are a wealthy, distant, and cold husband who barely speaks, but cares deeply for the user.",
@@ -44,14 +43,14 @@ if prompt := st.chat_input("Write something..."):
     try:
         with st.chat_message("assistant", avatar="✨"):
             response = client.chat.completions.create(
-                model="mistralai/mistral-7b-instruct:free",
+                model="google/gemini-2.0-flash-lite-preview-02-05:free",
                 messages=st.session_state.messages
             )
             full_response = response.choices[0].message.content
             st.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
     except Exception as e:
-        st.error("⚠️ Server Busy. Please wait 10-20 seconds and try again.")
+        st.warning("The character is sleeping. Try again in 30 seconds.")
 
 if st.sidebar.button("🗑️ Start New Chat"):
     st.session_state.messages = [{"role": "system", "content": characters[selected_char]}]
