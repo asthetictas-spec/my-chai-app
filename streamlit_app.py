@@ -1,63 +1,50 @@
 import streamlit as st
-import requests
-import json
-import os
+from openai import OpenAI
 
-st.set_page_config(page_title="My Private Chai", layout="centered")
+st.set_page_config(page_title="Prince Alaric Chat", page_icon="🧛‍♂️")
 
-CHAT_FILE = "chat_history_save.json"
+st.title("Prince Alaric")
 
-def load_history():
-    if os.path.exists(CHAT_FILE):
-        with open(CHAT_FILE, "r") as f:
-            return json.load(f)
-    return []
+if "OPENROUTER_API_KEY" in st.secrets:
+    api_key = st.secrets["OPENROUTER_API_KEY"]
+else:
+    st.error("API Error! Please check your Secrets in Streamlit.")
+    st.stop()
 
-def save_history(messages):
-    with open(CHAT_FILE, "w") as f:
-        json.dump(messages, f)
-
-CHARACTERS = {
-    "Vampire Prince": {
-        "prompt": "You are Alaric, a centuries-old vampire prince. You are possessive, elegant, and deeply romantic.",
-        "avatar": "https://i.pinimg.com/736x/a9/3a/0e/a93a0e10787e67f730c4e09f53835c24.jpg"
-    }
-}
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key,
+)
 
 if "messages" not in st.session_state:
-    st.session_state.messages = load_history()
-
-st.sidebar.title("Chai Settings")
-if st.sidebar.button("Clear Chat / New Story"):
-    st.session_state.messages = []
-    if os.path.exists(CHAT_FILE):
-        os.remove(CHAT_FILE)
-    st.rerun()
+    st.session_state.messages = [
+        {"role": "system", "content": "You are Prince Alaric, a mysterious and possessive vampire prince. You are charming, noble, and deeply protective of the user, whom you call 'Little love'."}
+    ]
 
 for message in st.session_state.messages:
-    with st.chat_message(message["role"], avatar=message.get("avatar")):
-        st.markdown(message["content"])
+    if message["role"] != "system":
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
 if prompt := st.chat_input("Type your message..."):
-    user_pic = "https://i.pinimg.com/736x/5c/8a/7e/5c8a7e937d7a4f938f38f38f38f38f38.jpg"
-    st.session_state.messages.append({"role": "user", "content": prompt, "avatar": user_pic})
-    with st.chat_message("user", avatar=user_pic):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant", avatar=CHARACTERS["Vampire Prince"]["avatar"]):
-        try:
-            response = requests.post(
-                url="https://openrouter.ai/api/v1/chat/completions",
-                headers={"Authorization": f"Bearer {st.secrets['OPENROUTER_API_KEY']}"},
-                data=json.dumps({
-                    "model": "google/gemini-2.0-flash-exp:free",
-                    "messages": [{"role": "system", "content": CHARACTERS["Vampire Prince"]["prompt"]}] + 
-                                [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
-                })
+    try:
+        with st.chat_message("assistant"):
+            response = client.chat.completions.create(
+                model="google/gemini-2.0-flash-exp:free",
+                messages=st.session_state.messages
             )
-            bot_msg = response.json()['choices'][0]['message']['content']
-            st.markdown(bot_msg)
-            st.session_state.messages.append({"role": "assistant", "content": bot_msg, "avatar": CHARACTERS["Vampire Prince"]["avatar"]})
-            save_history(st.session_state.messages)
-        except:
-            st.error("API Error! Please check your Secrets in Streamlit.")
+            full_response = response.choices[0].message.content
+            st.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+
+if st.sidebar.button("Clear Chat"):
+    st.session_state.messages = [
+        {"role": "system", "content": "You are Prince Alaric, a mysterious and possessive vampire prince. You are charming, noble, and deeply protective of the user, whom you call 'Little love'."}
+    ]
+    st.rerun()
