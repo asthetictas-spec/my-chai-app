@@ -25,23 +25,8 @@ characters = {
 st.sidebar.title("Character List")
 selected_char = st.sidebar.selectbox("Choose character:", list(characters.keys()))
 
-CHAT_FILE = f"history_{selected_char.replace(' ', '_').lower()}.json"
-
-def load_history():
-    if os.path.exists(CHAT_FILE):
-        try:
-            with open(CHAT_FILE, "r") as f:
-                return json.load(f)
-        except:
-            pass
-    return [{"role": "system", "content": characters[selected_char]}]
-
-def save_history(messages):
-    with open(CHAT_FILE, "w") as f:
-        json.dump(messages, f)
-
 if "messages" not in st.session_state or st.session_state.get("last_char") != selected_char:
-    st.session_state.messages = load_history()
+    st.session_state.messages = [{"role": "system", "content": characters[selected_char]}]
     st.session_state.last_char = selected_char
 
 st.title(f"Chat with {selected_char}")
@@ -53,7 +38,6 @@ for message in st.session_state.messages:
 
 if prompt := st.chat_input("Write something..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    save_history(st.session_state.messages)
     with st.chat_message("user"):
         st.markdown(prompt)
 
@@ -66,10 +50,9 @@ if prompt := st.chat_input("Write something..."):
             full_response = response.choices[0].message.content
             st.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
-            save_history(st.session_state.messages)
     except Exception as e:
         st.error("Server Busy. Please wait a moment and try again.")
 
 if st.sidebar.button("Start New Chat"):
     st.session_state.messages = [{"role": "system", "content": characters[selected_char]}]
-    save_history(st.session_state.messages
+    st.rerun()
